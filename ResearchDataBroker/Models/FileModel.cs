@@ -4,5 +4,5 @@ public class FileModel
     public string Filename { get; set; }
     public int FileId { get; set; }
     public int FileLink { get; set; }
-    public int ParentId { get; set; }
+    public int? ParentId { get; set; }
 }
