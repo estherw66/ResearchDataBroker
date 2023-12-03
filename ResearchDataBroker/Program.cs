@@ -1,8 +1,15 @@
-﻿var builder = WebApplication.CreateBuilder(args);
+﻿using Microsoft.Extensions.Options;
+
+var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
 builder.Services.AddControllersWithViews();
+
+// add http client
+
+builder.Services.AddScoped<IDataverseService, DataverseService>();
+builder.Services.AddScoped<IIndexerService, IndexerService>();
 
 var app = builder.Build();
 
