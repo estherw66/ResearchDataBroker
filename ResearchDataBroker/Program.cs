@@ -9,7 +9,7 @@ builder.Services.AddControllersWithViews();
 // TODO add http client
 
 builder.Services.AddScoped<IDataverseService, DataverseService>();
-builder.Services.AddScoped<IIndexerService, IndexerService>();
+builder.Services.AddScoped<IIndexService, IndexService>();
 
 var app = builder.Build();
 

@@ -1,7 +1,7 @@
-public class IndexerService : IIndexerService
+public class IndexService : IIndexService
 {
     private readonly IDataverseService _dataverseService;
-    public IndexerService(IDataverseService dataverseService)
+    public IndexService(IDataverseService dataverseService)
     {
         _dataverseService = dataverseService;
     }

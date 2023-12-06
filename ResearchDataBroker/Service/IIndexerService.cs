@@ -1,4 +1,4 @@
-public interface IIndexerService
+public interface IIndexService
 {
     
 }
