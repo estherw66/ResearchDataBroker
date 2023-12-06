@@ -6,7 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 
-// add http client
+// TODO add http client
 
 builder.Services.AddScoped<IDataverseService, DataverseService>();
 builder.Services.AddScoped<IIndexerService, IndexerService>();
