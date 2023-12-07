@@ -7,10 +7,10 @@ public class DataverseService : IDataverseService
 {
     public ServerConfig config = new ServerConfig("https://demo.dataverse.org"); // change this
 
-    public async Task<DataverseLatestVersionModel> GetLatestVersion(GetDatasetRequestDTO request)
+    public async Task<DataverseLatestVersionModel> GetLatestVersion(string url)
     {
         // get doi from url
-        string persistentId = await GetPersistentId(request.DatasetUrl);
+        string persistentId = await GetPersistentId(url);
 
         if (string.IsNullOrEmpty(persistentId))
         {
@@ -45,7 +45,7 @@ public class DataverseService : IDataverseService
     
     private async Task<string> GetPersistentId(string url)
     {
-
+        // check if draft
         if (!url.Contains("persistentId=") && !url.Contains("&version"))
         {
             // throw error
@@ -57,6 +57,7 @@ public class DataverseService : IDataverseService
         int endIndex = url.IndexOf("&version");
 
         string persistendId = url.Substring(startIndex, endIndex - startIndex);
+        // string persistendId = url.Substring(startIndex);
         Console.WriteLine(persistendId);
 
         return persistendId;

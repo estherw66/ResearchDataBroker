@@ -10,10 +10,12 @@ namespace ResearchDataBroker.Controllers
 	public class TestController : ControllerBase
 	{
 		private readonly IDataverseService _dataverseService;
+		private readonly IIndexService _indexService;
 
-		public TestController(IDataverseService dataverseService)
+		public TestController(IDataverseService dataverseService, IIndexService indexService)
 		{
 			_dataverseService = dataverseService;
+			_indexService = indexService;
 		}
 
 		[HttpGet]
@@ -30,7 +32,7 @@ namespace ResearchDataBroker.Controllers
 		[HttpGet("url")]
 		public async Task<IActionResult> GetResponse([FromBody]GetDatasetRequestDTO request)
 		{
-			DataverseLatestVersionModel response = await _dataverseService.GetLatestVersion(request);
+			DataverseLatestVersionModel response = await _dataverseService.GetLatestVersion(request.DatasetUrl);
 
 			if (response == null)
 			{
@@ -40,6 +42,14 @@ namespace ResearchDataBroker.Controllers
 			return Ok(response);
 		}
 
+		[HttpGet("files")]
+		public async Task<IActionResult> GetFiles([FromBody]GetDatasetRequestDTO request)
+		{
+			List<FileModel> response = await _indexService.GetFileModels(request);
+			// List<ItemModel> response = await _indexService.IndexDataset(request);
+
+			return Ok(response);
+		}
 	}
 }
 
