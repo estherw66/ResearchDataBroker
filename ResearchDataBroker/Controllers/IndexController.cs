@@ -12,11 +12,21 @@ public class IndexController : ControllerBase
     }
     // index files
     // enter url of dataset
-
-    [HttpGet]
-    public async Task<IActionResult> GetFiles([FromBody]GetDatasetRequestDTO request)
+    [HttpPost]
+    public async Task<IActionResult> IndexDataset([FromBody]GetDatasetRequestDTO request)
     {
-        // DataverseLatestVersionModel latestVersion = await _indexService
-        return Ok();
+        return Ok(await _indexService.IndexDataset(request));
+    }
+
+    [HttpGet("files")]
+    public async Task<IActionResult> GetFiles()
+    {
+        return Ok(await _indexService.GetFiles());
+    }
+
+    [HttpGet("items")]
+    public async Task<IActionResult> GetItems()
+    {
+        return Ok(await _indexService.GetItems());
     }
 }

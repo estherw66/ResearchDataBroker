@@ -23,59 +23,75 @@ public class IndexService : IIndexService
         };
     }
 
-    public async Task<List<ItemDTO>> IndexDataset(GetDatasetRequestDTO request)
+    public async Task<IndexDatasetResponseDTO> IndexDataset(GetDatasetRequestDTO request)
     {
-        // get url from controller
-        // use dataseverse service to get dataset
-        // take files from dataset
-
-        // 1
+        // 1 get dataset from dataverse
         DataverseLatestVersionModel latestVersion = await _dataverseService.GetLatestVersion(request.DatasetUrl);
 
-        // 2
+        // 2 map dataset to file models
         List<FileModel> files = await GetFileModels(latestVersion);
 
-        // 3 
+        // 3 (for now only classification works)
         DatasetType type = CheckDatasetType(files);
         if (type != DatasetType.Classification)
         {
             return null;
         }
+        // save each file in dataset and each item belonging to file to db
+        List<ItemDTO> items = new List<ItemDTO>();
         foreach (FileModel file in files)
         {
             FileModel savedFile = SaveNewFile(file);
             ItemModel savedItem = GetItem(file);
+
+            // .Select(FileDTOConverter.ConvertToDTO)
+            // .ToList();
+            
+
+            // link files and items
             if (!savedFile.Items.Any(item => item.Name == savedItem.Name))
             {
                 savedFile.Items.Add(savedItem);
             }
-
             if (!savedItem.Files.Any(file => file.Id == savedFile.Id))
             {
                 savedItem.Files.Add(savedFile);
             }
+            ItemDTO itemDTO = ItemDTOConverter.ConvertToDTO(savedItem);
+            items.Add(itemDTO);
         }
+        // return list of indexed items
 
+        // ItemDTO item = new ItemDTO
+        // {
+        //     Id = 1,
+        //     Name = "item name"
+        // };
+        // items.Add(item);
+        return new IndexDatasetResponseDTO
+        {
+            ItemDTOs = items
+        };
         // 4
         // DatasetType type = CheckDatasetType(files);
 
         // 5
-        if (type == DatasetType.Classification)
-        {
-            HashSet<string> directories = GetDirectories(files);
-            HashSet<ItemModel> itemModels = GetItemsClassification(directories);
+        // if (type == DatasetType.Classification)
+        // {
+        //     HashSet<string> directories = GetDirectories(files);
+        //     HashSet<ItemModel> itemModels = GetItemsClassification(directories);
 
-            // foreach (ItemModel i in itemModels)
-            // {
-            //     ItemModel savedItem = SaveItem(i);
-            // }
-        }
+        //     // foreach (ItemModel i in itemModels)
+        //     // {
+        //     //     ItemModel savedItem = SaveItem(i);
+        //     // }
+        // }
 
         // 6
-        if (type != DatasetType.Classification)
-        {
+        // if (type != DatasetType.Classification)
+        // {
 
-        }
+        // }
 
         // 7
 
@@ -102,14 +118,7 @@ public class IndexService : IIndexService
         //     }
         // }
 
-        List<ItemDTO> items = new List<ItemDTO>();
-        ItemDTO item = new ItemDTO
-        {
-            Id = 1,
-            Name = "item name"
-        };
-        items.Add(item);
-        return items;
+
         // throw new NotImplementedException();
     }
 

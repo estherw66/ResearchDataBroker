@@ -45,7 +45,7 @@ namespace ResearchDataBroker.Controllers
 		public async Task<IActionResult> IndexFiles([FromBody]GetDatasetRequestDTO request)
 		{
 			// List<FileModel> response = await _indexService.GetFileModels();
-			List<ItemDTO> response = await _indexService.IndexDataset(request);
+			IndexDatasetResponseDTO response = await _indexService.IndexDataset(request);
 
 			if (response == null)
 			{
