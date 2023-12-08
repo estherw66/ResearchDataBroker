@@ -41,14 +41,30 @@ namespace ResearchDataBroker.Controllers
 
 			return Ok(response);
 		}
+		[HttpGet("filez")]
+		public async Task<IActionResult> IndexFiles([FromBody]GetDatasetRequestDTO request)
+		{
+			// List<FileModel> response = await _indexService.GetFileModels();
+			List<ItemDTO> response = await _indexService.IndexDataset(request);
+
+			if (response == null)
+			{
+				return BadRequest("wrong dataset type");
+			}
+
+			return Ok(response);
+		}
 
 		[HttpGet("files")]
 		public async Task<IActionResult> GetFiles([FromBody]GetDatasetRequestDTO request)
 		{
-			List<FileModel> response = await _indexService.GetFileModels(request);
-			// List<ItemModel> response = await _indexService.IndexDataset(request);
+			return Ok(await _indexService.GetFiles());
+		}
 
-			return Ok(response);
+		[HttpGet("items")]
+		public async Task<IActionResult> GetItems()
+		{
+			return Ok(await _indexService.GetItems());
 		}
 	}
 }

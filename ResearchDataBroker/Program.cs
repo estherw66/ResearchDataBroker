@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using MySqlConnector;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -6,10 +8,19 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 
+// builder.Services.AddMySqlDataSource(builder.Configuration.GetConnectionString("Default")!);
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+builder.Services.AddDbContext<AppDBContext>(options =>
+{
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+});
+
 // TODO add http client
 
 builder.Services.AddScoped<IDataverseService, DataverseService>();
 builder.Services.AddScoped<IIndexService, IndexService>();
+builder.Services.AddScoped<IItemRepository, ItemRepository>();
+builder.Services.AddScoped<IFilesRepository, FilesRepository>();
 
 var app = builder.Build();
 

@@ -2,82 +2,118 @@
 public class IndexService : IIndexService
 {
     private readonly IDataverseService _dataverseService;
-    public IndexService(IDataverseService dataverseService)
+    private readonly IItemRepository _itemRepository;
+    private readonly IFilesRepository _filesRepository;
+    public IndexService(IDataverseService dataverseService, IItemRepository itemRepository, IFilesRepository filesRepository)
     {
         _dataverseService = dataverseService;
+        _itemRepository = itemRepository;
+        _filesRepository = filesRepository;
     }
 
-    public async Task<List<FileModel>> GetFileModels(GetDatasetRequestDTO request)
+    public async Task<GetFilesResponseDTO> GetFiles()
     {
-        DataverseLatestVersionModel latestVersion = await _dataverseService.GetLatestVersion(request.DatasetUrl);
-        List<FileModel> files = await GetFileModels(latestVersion);
-        List<ItemModel> items = new List<ItemModel>();
+        List<FileDTO> fileDTOs = GetAllFiles()
+            .Select(FileDTOConverter.ConvertToDTO)
+            .ToList();
 
-        // check dataset type
-        DatasetType type = CheckDatasetType(files);
-
-        if (type == DatasetType.Classification)
+        return new GetFilesResponseDTO
         {
-            HashSet<string> directories = GetDirectories(files);
-            foreach (string dir in directories)
-            {
-                ItemModel item = new ItemModel
-                {
-                    Id = 1,
-                    Name = dir
-                };
-                foreach (FileModel file in files)
-                {
-                    if (file.DirectoryLabel.Contains(dir, StringComparison.OrdinalIgnoreCase))
-                    {
-                        file.Items.Add(item);
-                        // item.Files.Add(file);
-                    }
-                }
-                items.Add(item);
-            }
-        }
-        return files;
+            Files = fileDTOs
+        };
     }
 
-    public async Task<List<ItemModel>> IndexDataset(GetDatasetRequestDTO request)
+    public async Task<List<ItemDTO>> IndexDataset(GetDatasetRequestDTO request)
     {
         // get url from controller
         // use dataseverse service to get dataset
         // take files from dataset
+
+        // 1
         DataverseLatestVersionModel latestVersion = await _dataverseService.GetLatestVersion(request.DatasetUrl);
+
+        // 2
         List<FileModel> files = await GetFileModels(latestVersion);
-        List<ItemModel> items = new List<ItemModel>();
 
-        // check dataset type
+        // 3 
         DatasetType type = CheckDatasetType(files);
-
-        if (type == DatasetType.Classification)
+        if (type != DatasetType.Classification)
         {
-            HashSet<string> directories = GetDirectories(files);
-            foreach (string dir in directories)
+            return null;
+        }
+        foreach (FileModel file in files)
+        {
+            FileModel savedFile = SaveNewFile(file);
+            ItemModel savedItem = GetItem(file);
+            if (!savedFile.Items.Any(item => item.Name == savedItem.Name))
             {
-                ItemModel item = new ItemModel
-                {
-                    Id = 1,
-                    Name = dir
-                };
-                foreach (FileModel file in files)
-                {
-                    if (file.DirectoryLabel.Contains(dir, StringComparison.OrdinalIgnoreCase))
-                    {
-                        file.Items.Add(item);
-                        // item.Files.Add(file);
-                    }
-                }
-                items.Add(item);
+                savedFile.Items.Add(savedItem);
+            }
+
+            if (!savedItem.Files.Any(file => file.Id == savedFile.Id))
+            {
+                savedItem.Files.Add(savedFile);
             }
         }
 
+        // 4
+        // DatasetType type = CheckDatasetType(files);
+
+        // 5
+        if (type == DatasetType.Classification)
+        {
+            HashSet<string> directories = GetDirectories(files);
+            HashSet<ItemModel> itemModels = GetItemsClassification(directories);
+
+            // foreach (ItemModel i in itemModels)
+            // {
+            //     ItemModel savedItem = SaveItem(i);
+            // }
+        }
+
+        // 6
+        if (type != DatasetType.Classification)
+        {
+
+        }
+
+        // 7
+
+
+        // if (type == DatasetType.Classification)
+        // {
+        //     HashSet<string> directories = GetDirectories(files);
+        //     foreach (string dir in directories)
+        //     {
+        //         ItemModel item = new ItemModel
+        //         {
+        //             Name = dir
+        //         };
+        //         item = _itemRepository.SaveItem(item);
+        //         foreach (FileModel file in files)
+        //         {
+        //             if (file.DirectoryLabel.Contains(dir, StringComparison.OrdinalIgnoreCase))
+        //             {
+        //                 file.Items.Add(item);
+        //                 // item.Files.Add(file);
+        //             }
+        //         }
+        //         // items.Add(item);
+        //     }
+        // }
+
+        List<ItemDTO> items = new List<ItemDTO>();
+        ItemDTO item = new ItemDTO
+        {
+            Id = 1,
+            Name = "item name"
+        };
+        items.Add(item);
         return items;
         // throw new NotImplementedException();
     }
 
+    // 2
     // map file to model
     private async Task<List<FileModel>> GetFileModels(DataverseLatestVersionModel latestVersion)
     {
@@ -100,6 +136,87 @@ public class IndexService : IIndexService
         return fileModels;
     }
 
+    // 3
+    // save files to db
+    private FileModel SaveNewFile(FileModel file)
+    {
+        return _filesRepository.SaveFile(file);
+    }
+
+    // 4
+    // get directories
+    private HashSet<string> GetDirectories(List<FileModel> files)
+    {
+        HashSet<string> directories = new HashSet<string>();
+
+        foreach (FileModel file in files)
+        {
+            string[] directoryParts = file.DirectoryLabel.Split('/');
+            foreach (var part in directoryParts)
+            {
+                directories.Add(part.ToLower());
+            }
+        }
+
+        string[] remove = new string[4] { "data", "train", "test", "eval" };
+
+        foreach (string dir in remove)
+        {
+            if (directories.Contains(dir))
+            {
+                directories.Remove(dir);
+            }
+        }
+
+        return directories;
+    }
+    private string GetDirectory(FileModel file)
+    {
+        HashSet<string> directories = new HashSet<string>();
+
+        string[] directoryParts = file.DirectoryLabel.Split('/');
+        foreach (var part in directoryParts)
+        {
+            directories.Add(part.ToLower());
+        }
+
+        string[] remove = new string[4] { "data", "train", "test", "eval" };
+
+        foreach (string dir in remove)
+        {
+            if (directories.Contains(dir))
+            {
+                directories.Remove(dir);
+            }
+        }
+
+        // if (directories.Count != 1)
+        // {
+        //     // error
+        // }
+
+        return directories.First();
+    }
+    // 5
+    // get file extensions
+    private HashSet<string> GetFileExtensions(List<FileModel> files)
+    {
+        HashSet<string> fileExtensions = new HashSet<string>();
+
+        foreach (FileModel file in files)
+        {
+            if (file.DirectoryLabel.Contains("data", StringComparison.OrdinalIgnoreCase))
+            {
+                FileInfo fi = new FileInfo(file.Filename);
+                string ext = fi.Extension;
+                fileExtensions.Add(ext);
+            }
+        }
+
+        return fileExtensions;
+    }
+
+    // 6
     // check dataset type
     private DatasetType CheckDatasetType(List<FileModel> files)
     {
@@ -124,61 +241,68 @@ public class IndexService : IIndexService
         return DatasetType.Other;
     }
 
-    private HashSet<string> GetDirectories(List<FileModel> files)
-    {
-        HashSet<string> directories = new HashSet<string>();
-
-        foreach (FileModel file in files)
-        {
-            string[] directoryParts = file.DirectoryLabel.Split('/');
-            foreach (var part in directoryParts)
-            {
-                directories.Add(part.ToLower());
-            }
-        }
-
-        string[] remove = new string[4] {"data", "train", "test", "eval" };
-
-        foreach (string dir in remove)
-        {
-            if (directories.Contains(dir))
-            {
-                directories.Remove(dir);
-            }
-        }
-
-        return directories;
-    }
-
-    private HashSet<string> GetFileExtensions(List<FileModel> files)
-    {
-        HashSet<string> fileExtensions = new HashSet<string>();
-
-        foreach (FileModel file in files)
-        {
-            if (file.DirectoryLabel.Contains("data", StringComparison.OrdinalIgnoreCase))
-            {
-                FileInfo fi = new FileInfo(file.Filename);
-                string ext = fi.Extension;
-                fileExtensions.Add(ext);
-            }
-        }
-
-        foreach (string ext in fileExtensions)
-        {
-            Console.WriteLine(ext);
-        }
-
-        return fileExtensions;
-    }
-
-    
-
-    // save item to db (use DAL)
-
     // get item(subject eg Banana) from file
+    private HashSet<ItemModel> GetItemsClassification(HashSet<string> directories)
+    {
+        HashSet<ItemModel> items = new HashSet<ItemModel>();
+        if (directories.Count != 0)
+        {
+            foreach (string dir in directories)
+            {
+                ItemModel item = new ItemModel
+                {
+                    Name = dir
+                };
+                items.Add(item);
+            }
+        }
+        return items;
+    }
 
-    // map item to model
+    // get item
+    private ItemModel GetItem(FileModel file)
+    {
+        string dir = GetDirectory(file);
 
-    // save file to db (use DAL)
+        ItemModel savedItem = SaveItem(new ItemModel
+        {
+            Name = dir
+        });
+
+        return savedItem;
+    }
+
+    // save item to db
+    private ItemModel SaveItem(ItemModel item)
+    {
+        if (_itemRepository.ExistsByName(item.Name))
+        {
+            return _itemRepository.GetItemByName(item.Name);
+        }
+
+        return _itemRepository.SaveItem(item);
+    }
+
+    // link files and items
+
+    private HashSet<FileModel> GetAllFiles()
+    {
+        return _filesRepository.GetFiles();
+    }
+
+    public async Task<GetItemsResponseDTO> GetItems()
+    {
+        List<ItemDTO> itemDTOs = GetAllItems()
+            .Select(ItemDTOConverter.ConvertToDTO)
+            .ToList();
+
+        return new GetItemsResponseDTO
+        {
+            Items = itemDTOs
+        };
+    }
+    private HashSet<ItemModel> GetAllItems()
+    {
+        return _itemRepository.GetItems();
+    }
 }
