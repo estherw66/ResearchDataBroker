@@ -19,8 +19,8 @@ builder.Services.AddDbContext<AppDBContext>(options =>
 
 builder.Services.AddScoped<IDataverseService, DataverseService>();
 builder.Services.AddScoped<IIndexService, IndexService>();
-builder.Services.AddScoped<IItemRepository, ItemRepository>();
-builder.Services.AddScoped<IFilesRepository, FilesRepository>();
+builder.Services.AddScoped<IItemRepository, LocalItemRepository>();
+builder.Services.AddScoped<IFilesRepository, LocalFilesRepository>();
 
 var app = builder.Build();
 

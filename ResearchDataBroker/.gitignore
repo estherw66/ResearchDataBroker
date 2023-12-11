@@ -232,3 +232,7 @@ _Pvt_Extensions
 .fake/
 
 ServerConfig.cs
+
+encodings.xml
+indexLayout.xml
+vcs.xml
