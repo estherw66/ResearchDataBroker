@@ -1,6 +1,8 @@
+using ResearchDataBroker.Models;
+
 public static class ItemDTOConverter
 {
-    public static ItemDTO ConvertToDTO(ItemModel itemModel)
+    public static ItemDTO ConvertToDTO(ItemModel? itemModel)
     {
         ItemDTO itemDTO = new ItemDTO
         {

@@ -1,6 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
+namespace ResearchDataBroker.Models;
+
 public class ItemModel
 {
     [Key]
@@ -11,6 +13,6 @@ public class ItemModel
     [Column("name")]
     [StringLength(maximumLength: 45, MinimumLength = 2)]
     public string Name { get; set; }
-    
-    public List<FileModel> Files { get; } = new();
+
+    public ICollection<FileModel> Files { get; set; } = new List<FileModel>();
 }

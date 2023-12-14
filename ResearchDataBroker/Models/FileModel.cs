@@ -1,10 +1,13 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using ResearchDataBroker.Models;
 
 public class FileModel
 {
     [Key]
+    [Required]
     [Column("id")]
+    [DatabaseGenerated(DatabaseGeneratedOption.None)]
     public int Id { get; set; }
 
     [Required]
@@ -24,5 +27,6 @@ public class FileModel
 
     [Column("parent_id")]
     public int? ParentId { get; set; }
-    public List<ItemModel>? Items { get; } = new();
+
+    public ICollection<ItemModel?> Items { get; set; } = new List<ItemModel?>();
 }

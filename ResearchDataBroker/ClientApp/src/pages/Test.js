@@ -4,18 +4,8 @@ import axios from 'axios'
 const Test = () => {
     const [message, setMessage] = useState("")
 
-    //useEffect(() => {
-    //    fetch(`api/test/`)
-    //        .then((res) => {
-    //            return res.json()
-    //        })
-    //        .then(data => {
-    //            console.log(data)
-    //        })
-    //}, [])
-
     useEffect(() => {
-        axios.get('/api/test')
+        axios.get('api/test')
             .then(response => {
                 setMessage(response.data['message']);
                 console.log(response.data);

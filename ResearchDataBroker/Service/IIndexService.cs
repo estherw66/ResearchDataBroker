@@ -1,6 +1,6 @@
 public interface IIndexService
 {
-    Task<IndexDatasetResponseDTO> IndexDataset(GetDatasetRequestDTO request);
+    Task<IndexDatasetResponseDTO> IndexDataset(GetDatasetLatestVersionRequestDTO latestVersionRequest);
     Task<GetFilesResponseDTO> GetFiles();
     Task<GetItemsResponseDTO> GetItems();
 }

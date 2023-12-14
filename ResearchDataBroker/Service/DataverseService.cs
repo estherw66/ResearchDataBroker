@@ -5,16 +5,21 @@ using Newtonsoft.Json.Linq;
 
 public class DataverseService : IDataverseService
 {
-    public ServerConfig config = new ServerConfig("https://demo.dataverse.org"); // change this
+    // public ServerConfig config = new ServerConfig("https//demo.dataverse.org"); // todo change this
+    // private ServerConfig config = new ServerConfig("");
 
     public async Task<DataverseLatestVersionModel> GetLatestVersion(string url)
     {
+        string serverUrl = GetServerUrl(url);
+        Console.WriteLine(serverUrl);
+        ServerConfig config = new ServerConfig(serverUrl);
+        
         // get doi from url
-        string persistentId = await GetPersistentId(url);
+        string persistentId = GetPersistentId(url);
 
         if (string.IsNullOrEmpty(persistentId))
         {
-            // throw error
+            // todo throw error
             Console.WriteLine("no persistent id");
             return null;
         }
@@ -25,7 +30,7 @@ public class DataverseService : IDataverseService
 
         if (response == null)
         {
-            // throw error
+            // todo throw error
             Console.WriteLine("no response model");
             return null;
         }
@@ -35,32 +40,37 @@ public class DataverseService : IDataverseService
 
         if (latestModel == null)
         {
-            // throw error
+            // TODO throw error
             Console.WriteLine("no latest version");
             return null;
         }
 
         return latestModel;
     }
-    
-    private async Task<string> GetPersistentId(string url)
+
+    private string GetServerUrl(string url)
     {
-        // check if draft
+        Uri uri = new Uri(url);
+        string serverUrl = $"{uri.Scheme}://{uri.Host}";
+        return serverUrl;
+    }
+    private string GetPersistentId(string url)
+    {
+        // TODO check if draft
         if (!url.Contains("persistentId=") && !url.Contains("&version"))
         {
-            // throw error
+            // TODO throw error
             Console.WriteLine("wrong url");
             return null;
         }
 
-        int startIndex = url.IndexOf("persistentId=") + "persistentId=".Length;
-        int endIndex = url.IndexOf("&version");
+        int startIndex = url.IndexOf("persistentId=", StringComparison.Ordinal) + "persistentId=".Length;
+        int endIndex = url.IndexOf("&version", StringComparison.Ordinal);
 
-        string persistendId = url.Substring(startIndex, endIndex - startIndex);
+        string persistentId = url.Substring(startIndex, endIndex - startIndex);
         // string persistendId = url.Substring(startIndex);
-        Console.WriteLine(persistendId);
 
-        return persistendId;
+        return persistentId;
     }
 
     private async Task<DataverseResponseModel> GetDataverseResponse(string persistentId)
@@ -70,7 +80,7 @@ public class DataverseService : IDataverseService
 
         if (!response.IsSuccessStatusCode)
         {
-            // throw error
+            // TODO throw error
             Console.WriteLine("no success code");
             return null;
         }

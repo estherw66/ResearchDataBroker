@@ -1,4 +1,4 @@
 public class GetFilesResponseDTO
 {
-    public List<FileDTO> Files { get; set; }
+    public ICollection<FileDTO> Files { get; set; }
 }

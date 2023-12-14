@@ -1,3 +1,5 @@
+using ResearchDataBroker.Models;
+
 public static class FileDTOConverter
 {
     public static FileDTO ConvertToDTO(FileModel fileModel)
@@ -11,7 +13,7 @@ public static class FileDTOConverter
             ParentId = fileModel.ParentId
         };
 
-        foreach (ItemModel item in fileModel.Items)
+        foreach (ItemModel? item in fileModel.Items)
         {
             fileDTO.ItemNames.Add(item.Name);
         }

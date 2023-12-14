@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using MySqlConnector;
+using ResearchDataBroker.Data;
+using ResearchDataBroker.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,8 +21,8 @@ builder.Services.AddDbContext<AppDBContext>(options =>
 
 builder.Services.AddScoped<IDataverseService, DataverseService>();
 builder.Services.AddScoped<IIndexService, IndexService>();
-builder.Services.AddScoped<IItemRepository, LocalItemRepository>();
-builder.Services.AddScoped<IFilesRepository, LocalFilesRepository>();
+builder.Services.AddScoped<IItemRepository, ItemRepository>();
+builder.Services.AddScoped<IFilesRepository, FileRepository>();
 
 var app = builder.Build();
 

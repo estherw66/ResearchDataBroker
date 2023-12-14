@@ -1,5 +1,4 @@
 public class IndexDatasetResponseDTO
 {
-    public List<ItemDTO> ItemDTOs { get; set; }
-    // public List<ItemIndexDTO> ItemDTOs { get; set; }
+    public ICollection<ItemDTO> ItemDTOs { get; set; } = new HashSet<ItemDTO>();
 }

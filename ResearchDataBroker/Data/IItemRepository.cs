@@ -1,7 +1,9 @@
+using ResearchDataBroker.Models;
+
 public interface IItemRepository
 {
-    ItemModel SaveItem(ItemModel item);
-    HashSet<ItemModel> GetItems();
+    Task<ICollection<ItemModel>> GetItems();
+    ItemModel? GetItemByName(string name);
     bool ExistsByName(string name);
-    ItemModel GetItemByName(string name);
+    Task<bool> Save(ItemModel? item);
 }

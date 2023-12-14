@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 
+namespace ResearchDataBroker.Controllers;
+
 [ApiController]
 [Route("api/[controller]")]
 public class IndexController : ControllerBase
@@ -13,9 +15,9 @@ public class IndexController : ControllerBase
     // index files
     // enter url of dataset
     [HttpPost]
-    public async Task<IActionResult> IndexDataset([FromBody]GetDatasetRequestDTO request)
+    public async Task<IActionResult> IndexDataset([FromBody]GetDatasetLatestVersionRequestDTO latestVersionRequest)
     {
-        return Ok(await _indexService.IndexDataset(request));
+        return Ok(await _indexService.IndexDataset(latestVersionRequest));
     }
 
     [HttpGet("files")]
