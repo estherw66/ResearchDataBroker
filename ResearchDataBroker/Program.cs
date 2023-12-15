@@ -1,8 +1,29 @@
-﻿var builder = WebApplication.CreateBuilder(args);
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using MySqlConnector;
+using ResearchDataBroker.Data;
+using ResearchDataBroker.Service;
+
+var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
 builder.Services.AddControllersWithViews();
+
+// builder.Services.AddMySqlDataSource(builder.Configuration.GetConnectionString("Default")!);
+// var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var connectionString = builder.Configuration.GetConnectionString("LocalConnection");
+builder.Services.AddDbContext<AppDBContext>(options =>
+{
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+});
+
+// TODO add http client
+
+builder.Services.AddScoped<IDataverseService, DataverseService>();
+builder.Services.AddScoped<IIndexService, IndexService>();
+builder.Services.AddScoped<IItemRepository, ItemRepository>();
+builder.Services.AddScoped<IFilesRepository, FileRepository>();
 
 var app = builder.Build();
 

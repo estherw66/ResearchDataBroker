@@ -231,3 +231,8 @@ _Pvt_Extensions
 # FAKE - F# Make
 .fake/
 
+ServerConfig.cs
+
+encodings.xml
+indexLayout.xml
+vcs.xml

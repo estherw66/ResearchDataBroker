@@ -1,5 +1,6 @@
-import { Home } from "./components/Home";
-import Test from "./components/Test";
+import { Home } from "./pages/Home";
+import Test from "./pages/Test";
+import Error from "./pages/error";
 
 const AppRoutes = [
   {
@@ -9,6 +10,10 @@ const AppRoutes = [
   {
     path: '/test-api',
     element: <Test />
+  },
+  {
+    path: '/*',
+    element: <Error />
   }
 ];
 

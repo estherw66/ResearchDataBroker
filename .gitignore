@@ -646,3 +646,6 @@ sketch
 
 ### VisualStudio Patch ###
 # Additional files built by Visual Studio
+appsettings.json
+Config/
+ServerConfig.cs
