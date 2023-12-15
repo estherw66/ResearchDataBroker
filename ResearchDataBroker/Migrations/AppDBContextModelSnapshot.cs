@@ -66,7 +66,7 @@ namespace ResearchDataBroker.Migrations
                     b.ToTable("item_files", (string)null);
                 });
 
-            modelBuilder.Entity("ItemModel", b =>
+            modelBuilder.Entity("ResearchDataBroker.Models.ItemModel", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -92,7 +92,7 @@ namespace ResearchDataBroker.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ItemModel", null)
+                    b.HasOne("ResearchDataBroker.Models.ItemModel", null)
                         .WithMany()
                         .HasForeignKey("ItemsId")
                         .OnDelete(DeleteBehavior.Cascade)
