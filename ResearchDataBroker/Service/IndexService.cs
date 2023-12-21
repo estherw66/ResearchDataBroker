@@ -142,7 +142,12 @@ public class IndexService : IIndexService
     
     private DatasetType CheckDatasetType(ICollection<FileModel> files)
     {
-        ICollection<string> directories = GetDirectories(files);
+        ICollection<string> directories = new List<string>();
+        foreach (FileModel file in files)
+        {
+            string dir = GetDirectory(file);
+            directories.Add(dir);
+        }
         ICollection<string> fileExtensions = GetFileExtensions(files);
 
         if (directories.Count != 0)
@@ -164,31 +169,6 @@ public class IndexService : IIndexService
         return DatasetType.Other;
     }
 
-    private ICollection<string> GetDirectories(ICollection<FileModel> files)
-    {
-        ICollection<string> directories = new HashSet<string>();
-
-        foreach (FileModel file in files)
-        {
-            string[] directoryParts = file.DirectoryLabel.Split('/');
-            foreach (var part in directoryParts)
-            {
-                directories.Add(part.ToLower());
-            }
-        }
-
-        string[] remove = new string[4] { "data", "train", "test", "eval" };
-
-        foreach (string dir in remove)
-        {
-            if (directories.Contains(dir))
-            {
-                directories.Remove(dir);
-            }
-        }
-
-        return directories;
-    }
     // remove method
     private string GetDirectory(FileModel file)
     {

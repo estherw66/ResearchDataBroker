@@ -28,5 +28,5 @@ public class FileModel
     [Column("parent_id")]
     public int? ParentId { get; set; }
 
-    public ICollection<ItemModel?> Items { get; set; } = new List<ItemModel?>();
+    public ICollection<ItemModel> Items { get; set; } = new List<ItemModel>();
 }
