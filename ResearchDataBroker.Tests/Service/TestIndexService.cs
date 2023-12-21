@@ -190,8 +190,89 @@ public class TestIndexService
     }
 
     [Test]
-    public void IndexDataset_ShouldSaveFileAndItemAndReturnItemDTOs()
+    public async Task IndexDataset_ShouldSaveFileAndItemAndReturnItemDTOs()
     {
+        // arrange
+        var latestVersion = new DataverseLatestVersionModel
+        {
+            Files = new List<DataverseFileModel>
+            {
+                new DataverseFileModel
+                {
+                    DirectoryLabel = "data/train/label",
+                    DataFile = new DataverseDataFileModel
+                    {
+                        Id = 1,
+                        Filename = "filename.jpg",
+                        ContentType = "Content/Type"
+                    }
+                },
+                new DataverseFileModel
+                {
+                    DirectoryLabel = "data/train/label",
+                    DataFile = new DataverseDataFileModel
+                    {
+                        Id = 2,
+                        Filename = "filename_2.jpg",
+                        ContentType = "Content/Type"
+                    }
+                }
+            }
+        };
         
+        _dataverseService.Setup(ds => ds.GetLatestVersion("url")).ReturnsAsync(latestVersion);
+
+        
+        ItemModel item = new ItemModel
+        {
+            Name = "item"
+        };
+
+        FileModel file = new FileModel
+        {
+            Id = 1,
+            Filename = "filename.jpg",
+            DirectoryLabel = "data/train/label",
+            Link = "link"
+        };
+
+        var files = new List<FileModel>
+        {
+            file
+        };
+
+        _itemRepository.Setup(ir => ir.Save(item)).ReturnsAsync(true);
+        _filesRepository.Setup(fr => fr.Save(file)).ReturnsAsync(true);
+
+        ItemDTO itemDto = new ItemDTO
+        {
+            Id = 1,
+            Name = "label"
+        };
+        
+        var expectedResponse = new IndexDatasetResponseDTO
+        {
+            ItemDTOs = new HashSet<ItemDTO>
+            {
+                itemDto
+            }
+        };
+
+        var latestVersionRequest = new GetDatasetLatestVersionRequestDTO
+        {
+            DatasetUrl = "url"
+        };
+        
+        // act
+        var actualResponse = await _indexService.IndexDataset(latestVersionRequest);
+        
+        // assert
+        Assert.IsInstanceOf<IndexDatasetResponseDTO>(actualResponse);
+        Assert.IsNotNull(actualResponse.ItemDTOs);
+
+        for (int i = 0; i < expectedResponse.ItemDTOs.Count; i++)
+        {
+            Assert.That(actualResponse.ItemDTOs.ToList()[i].Name, Is.EqualTo(expectedResponse.ItemDTOs.ToList()[i].Name));
+        }
     }
 }
