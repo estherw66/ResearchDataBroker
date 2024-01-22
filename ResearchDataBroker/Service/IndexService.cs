@@ -1,5 +1,4 @@
 using System.Collections;
-using Microsoft.EntityFrameworkCore;
 using ResearchDataBroker.Models;
 
 namespace ResearchDataBroker.Service;
@@ -7,9 +6,8 @@ namespace ResearchDataBroker.Service;
 public class IndexService : IIndexService
 {
     private readonly IDataverseService _dataverseService;
-    private readonly IFilesRepository _filesRepository;
     private readonly IItemRepository _itemRepository;
-    
+    private readonly IFilesRepository _filesRepository;
 
     public IndexService(IDataverseService dataverseService, IItemRepository itemRepository, IFilesRepository filesRepository)
     {
@@ -20,80 +18,111 @@ public class IndexService : IIndexService
 
     public async Task<IndexDatasetResponseDTO> IndexDataset(GetDatasetLatestVersionRequestDTO latestVersionRequest)
     {
-        // 1: get dataset from dataverse
-        DataverseLatestVersionModel latestVersion =
-            await _dataverseService.GetLatestVersion(latestVersionRequest.DatasetUrl);
+        // 1. get file models
+        ICollection<FileModel> files = await GetFileModels(latestVersionRequest.DatasetUrl);
         
-        // 2: map dataset to file models
-        ICollection<FileModel> files = GetFileModels(latestVersion);
-        
-        // 3: get items from files (only classification for now)
+        // 2. check dataset type
         DatasetType type = CheckDatasetType(files);
-        if (type != DatasetType.Classification)
-        {
-            return null;
-        }
-
-        // 4: save file and item
-        ICollection<ItemModel> items = new HashSet<ItemModel>();
-        foreach (FileModel file in files)
-        {
-            ItemModel item = GetItem(file);
-
-            if (!item.Files.Any(f => f.Id == file.Id))
-            {
-                item.Files.Add(file);
-            }
-
-            if (!file.Items.Any(i => i.Name == item.Name))
-            {
-                file.Items.Add(item);
-            }
-            
-            await SaveItem(item);
-            await SaveFile(file);
-            items.Add(item);
-        }
-
-        ICollection<ItemDTO> itemDTOs = items.Select(i => ItemDTOConverter.ConvertToDTO(i)).ToHashSet();
         
-        IndexDatasetResponseDTO response = new IndexDatasetResponseDTO
+        // 3. save file and item
+        ICollection<ItemModel> items = new HashSet<ItemModel>();
+        foreach (var file in files)
         {
-            ItemDTOs = itemDTOs
-        };
-        return response;
+            if (type == DatasetType.Classification)
+            {
+                ItemModel item = GetItemClassification(file);
+                items = await SaveFileItems(item, file, items);
+            } else if (type == DatasetType.ObjectDetection)
+            {
+                string ext = GetFileExtension(file);
+
+                if (ext == ".xml")
+                {
+                    ItemModel item = await GetItemObjectDetection(file);
+                    items = await SaveFileItems(item, file, items);
+                }
+                
+            } else if (type == DatasetType.Tabular)
+            {
+                throw new NotImplementedException();
+            } else if (type == DatasetType.Other)
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        foreach (var file in files)
+        {
+            if (type == DatasetType.ObjectDetection)
+            {
+                string ext = GetFileExtension(file);
+
+                if (ext == ".jpg")
+                {
+                    string filename = file.Filename.Replace(".jpg", ".xml");
+                    ItemModel item = GetItemByFilename(filename);
+                    items = await SaveFileItems(item, file, items);
+                }
+
+                if (ext == ".xml")
+                {
+                    await LinkFileToParent(file);
+                }
+            }
+        }
+
+        if (items.Count != 0)
+        {
+            ICollection<ItemDTO> itemDtos = items.Select(i => ItemDTOConverter.ConvertToDTO(i))
+                .ToHashSet();
+
+            IndexDatasetResponseDTO response = new IndexDatasetResponseDTO
+            {
+                ItemDTOs = itemDtos
+            };
+
+            return response;
+        }
+
+        return null;
     }
 
-    public async Task<GetFilesResponseDTO> GetFiles()
+    public Task<GetFilesResponseDTO> GetFiles()
     {
-        ICollection<FileDTO> fileDTOs = (await GetAllFiles())
+        throw new NotImplementedException();
+    }
+
+    public Task<GetItemsResponseDTO> GetItems()
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<GetFilesResponseDTO> GetFilesByItem(string itemName)
+    {
+        ICollection<FileDTO> fileDtos = (await _filesRepository.GetFilesByItem(itemName))
             .Select(f => FileDTOConverter.ConvertToDTO(f))
             .ToHashSet();
-        
+
         return new GetFilesResponseDTO
         {
-            Files = fileDTOs
+            Files = fileDtos
         };
     }
 
-    public async Task<GetItemsResponseDTO> GetItems()
-    {
-        ICollection<ItemDTO> itemDTOs = (await GetAllItems())
-            .Select(i => ItemDTOConverter.ConvertToDTO(i))
-            .ToHashSet();
+    // public ItemDTO GetItemByFilename(string filename)
+    // {
+    //     var item = _itemRepository.GetItemFromFilename(filename);
+    //
+    //     return ItemDTOConverter.ConvertToDTO(item);
+    // }
 
-        return new GetItemsResponseDTO
-        {
-            Items = itemDTOs
-        };
-    }
-    
-    // index dataset
-    // 2: map dataset to file models
-    private ICollection<FileModel> GetFileModels(DataverseLatestVersionModel latestVersion)
+    // 1. get file models
+    private async Task<ICollection<FileModel>> GetFileModels(string url)
     {
+        DataverseLatestVersionModel latestVersionModel = await _dataverseService.GetLatestVersion(url);
+        
         ICollection<FileModel> fileModels = new List<FileModel>();
-        foreach (DataverseFileModel file in latestVersion.Files)
+        foreach (DataverseFileModel file in latestVersionModel.Files)
         {
             if (file.DirectoryLabel.Contains("data", StringComparison.OrdinalIgnoreCase))
             {
@@ -104,6 +133,7 @@ public class IndexService : IIndexService
                     Link = $"{ServerConfig.ServerUrl}/api/access/datafile/{file.DataFile.Id}",
                     DirectoryLabel = file.DirectoryLabel.ToLower()
                 };
+                
                 fileModels.Add(fileModel);
             }
         }
@@ -111,8 +141,45 @@ public class IndexService : IIndexService
         return fileModels;
     }
     
-    // 3: get items
-    private ItemModel GetItem(FileModel file)
+    // 2. check dataset type
+    private DatasetType CheckDatasetType(ICollection<FileModel> files)
+    {
+        ICollection<string> directories = new HashSet<string>();
+        ICollection<string> fileExtensions = new HashSet<string>();
+
+        foreach (FileModel file in files)
+        {
+            string dir = GetDirectory(file);
+            if (dir != null)
+            {
+                directories.Add(dir);
+            }
+
+            string fileExtension = GetFileExtension(file);
+            fileExtensions.Add(fileExtension);
+        }
+
+        if (directories.Count != 0)
+        {
+            return DatasetType.Classification;
+        } else if (fileExtensions.Contains(".xml") && fileExtensions.Contains(".jpg"))
+        {
+            // TODO add more file extensions for images
+            return DatasetType.ObjectDetection;
+        } else if (fileExtensions.Contains(".csv"))
+        {
+            return DatasetType.Tabular;
+        }
+        else
+        {
+            return DatasetType.Other;
+        }
+    }
+    
+    // 3. save file and item
+    
+    // get items
+    private ItemModel GetItemClassification(FileModel file)
     {
         string dir = GetDirectory(file);
         var item = _itemRepository.GetItemByName(dir);
@@ -127,53 +194,76 @@ public class IndexService : IIndexService
 
         return item;
     }
-    
-    // save file
-    private async Task<bool> SaveFile(FileModel file)
+
+    private async Task<ItemModel> GetItemObjectDetection(FileModel file)
     {
-        return await _filesRepository.Save(file);
+        string name = await _dataverseService.GetItemFromXml(file.Link);
+        var item = _itemRepository.GetItemByName(name);
+
+        if (item == null)
+        {
+            return new ItemModel
+            {
+                Name = name
+            };
+        }
+
+        return item;
     }
-    
-    // save item
+
+    private ItemModel GetItemTabular(FileModel file)
+    {
+        throw new NotImplementedException();
+    }
+
     private async Task<bool> SaveItem(ItemModel item)
     {
         return await _itemRepository.Save(item);
     }
-    
-    private DatasetType CheckDatasetType(ICollection<FileModel> files)
+
+    private async Task<bool> SaveFile(FileModel file)
     {
-        ICollection<string> directories = new List<string>();
-        foreach (FileModel file in files)
-        {
-            string dir = GetDirectory(file);
-            directories.Add(dir);
-        }
-        ICollection<string> fileExtensions = GetFileExtensions(files);
-
-        if (directories.Count != 0)
-        {
-            return DatasetType.Classification;
-        }
-
-        // add other image file types
-        if (fileExtensions.Contains(".xml") && fileExtensions.Contains(".jpg"))
-        {
-            return DatasetType.ObjectDetection;
-        }
-
-        if (fileExtensions.Contains(".csv"))
-        {
-            return DatasetType.Tabular;
-        }
-
-        return DatasetType.Other;
+        return await _filesRepository.Save(file);
     }
 
-    // remove method
+    private async Task<ICollection<ItemModel>> SaveFileItems(ItemModel item, FileModel file, ICollection<ItemModel> items)
+    {
+        if (item != null)
+        {
+            if (!item.Files.Any(f => f.Id == file.Id))
+            {
+                item.Files.Add(file);
+            }
+
+            if (!file.Items.Any(i => i.Id == item.Id))
+            {
+                file.Items.Add(item);
+            }
+
+            await SaveItem(item);
+            await SaveFile(file);
+            items.Add(item);
+
+            return items;
+        }
+
+        return items;
+    }
+    
+    // link parent id
+    private async Task LinkFileToParent(FileModel file)
+    {
+        string parentFilename = file.Filename.Replace(".xml", ".jpg");
+        FileModel parent = _filesRepository.GetFileByName(parentFilename);
+        file.ParentId = parent.Id;
+
+        await SaveFile(file);
+    }
+    
     private string GetDirectory(FileModel file)
     {
         ICollection<string> directories = new HashSet<string>();
-        
+
         string[] directoryParts = file.DirectoryLabel.Split('/');
         foreach (var part in directoryParts)
         {
@@ -182,7 +272,7 @@ public class IndexService : IIndexService
 
         string[] remove = new string[4] { "data", "train", "test", "eval" };
 
-        foreach (string dir in remove)
+        foreach (var dir in remove)
         {
             if (directories.Contains(dir))
             {
@@ -190,40 +280,37 @@ public class IndexService : IIndexService
             }
         }
 
-        // if (directories.Count != 1)
-        // {
-        //     // error
-        // }
+        if (directories.Count != 1)
+        {
+            // TODO check FDD for directory rules
+            // TODO throw error
+            return null;
+        }
 
         return directories.First();
     }
 
-    private ICollection<string> GetFileExtensions(ICollection<FileModel> files)
+    private string GetFileExtension(FileModel file)
     {
-        ICollection<string> fileExtensions = new HashSet<string>();
-
-        foreach (FileModel file in files)
+        if (file.DirectoryLabel.Contains("data", StringComparison.OrdinalIgnoreCase))
         {
-            if (file.DirectoryLabel.Contains("data", StringComparison.OrdinalIgnoreCase))
-            {
-                FileInfo fi = new FileInfo(file.Filename);
-                string ext = fi.Extension;
-                fileExtensions.Add(ext);
-            }
+            FileInfo fi = new FileInfo(file.Filename);
+            string ext = fi.Extension;
+            return ext;
         }
 
-        return fileExtensions;
+        return null;
     }
-    
-    // get files
-    private async Task<ICollection<FileModel>> GetAllFiles()
+
+    private ItemModel GetItemByFilename(string filename)
     {
-        return await _filesRepository.GetFiles();
-    }
-    
-    // get items 
-    private async Task<ICollection<ItemModel>> GetAllItems()
-    {
-        return await _itemRepository.GetItems();
+        ItemModel item = _itemRepository.GetItemFromFilename(filename);
+
+        if (item != null)
+        {
+            return item;
+        }
+
+        return null;
     }
 }

@@ -15,6 +15,7 @@ public class ItemRepository : IItemRepository
     public async Task<ICollection<ItemModel>> GetItems()
     {
         return await _context.Items.Include(i => i.Files).ToListAsync();
+        // return await _context.Items.ToListAsync();
     }
 
     public ItemModel GetItemByName(string name)
@@ -25,6 +26,14 @@ public class ItemRepository : IItemRepository
         }
 
         return null;
+    }
+
+    public ItemModel? GetItemFromFilename(string filename)
+    {
+        filename.Replace(".jpg", ".xml");
+        ItemModel item =  _context.Items.FirstOrDefault(i => i.Files.Any(f => f.Filename == filename));
+        // throw new NotImplementedException();
+        return item;
     }
 
     public bool ExistsByName(string name)
@@ -41,5 +50,12 @@ public class ItemRepository : IItemRepository
         _context.Items.Add(item);
         var saved =  await _context.SaveChangesAsync();
         return saved > 0;
+    }
+
+    public ItemModel GetItemByFile(string filename)
+    {
+        return  _context.Items
+            .Include(i => i.Files)
+            .FirstOrDefault(i => i.Files.Any(f => f.Filename == filename));
     }
 }

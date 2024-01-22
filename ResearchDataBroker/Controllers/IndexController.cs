@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using ResearchDataBroker.DTO;
 
 namespace ResearchDataBroker.Controllers;
 
@@ -31,4 +32,16 @@ public class IndexController : ControllerBase
     {
         return Ok(await _indexService.GetItems());
     }
+
+    [HttpGet("files/{item}")]
+    public async Task<IActionResult> GetFilesByItem(string item)
+    {
+        return Ok(await _indexService.GetFilesByItem(item));
+    }
+
+    // [HttpGet("item/{filename}")]
+    // public OkObjectResult GetItemByFile(string filename)
+    // {
+    //     return Ok(_indexService.GetItemByFilename(filename));
+    // }
 }
