@@ -26,50 +26,19 @@ public class FileRepository : IFilesRepository
         return null;
     }
 
-    public FileModel GetFileByName(string name)
-    {
-        if (!ExistsByName(name))
-        {
-            return null;
-        }
-
-        return _context.Files.FirstOrDefault(f => f.Filename == name);
-    }
-
     public bool ExistsById(int id)
     {
         return _context.Files.Any(f => f.Id == id);
-    }
-
-    public bool ExistsByName(string name)
-    {
-        return _context.Files.Any(f => f.Filename == name);
     }
 
     public async Task<bool> Save(FileModel file)
     {
         if (ExistsById(file.Id))
         {
-            // TODO update file 
-            // TODO fix trackingp
-            
-            // var existingFile = GetFile(file.Id);
-            // existingFile.ParentId = file.ParentId;
-            //
-            // var updated = await _context.SaveChangesAsync();
-            // return updated > 0;
             return true;
         }
         _context.Files.Add(file);
         var saved =  await _context.SaveChangesAsync();
         return saved > 0;
-    }
-
-    public async Task<ICollection<FileModel>> GetFilesByItem(string itemName)
-    {
-        return await _context.Files
-            .Include(f => f.Items)
-            .Where(f => f.Items.Any(i => i.Name == itemName))
-            .ToListAsync();
     }
 }

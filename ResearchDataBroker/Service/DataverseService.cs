@@ -1,12 +1,13 @@
 // using System.Net.Http.Json;
-
-using System.Xml.Linq;
+using System.Text.Json;
 using Newtonsoft.Json;
-
-namespace ResearchDataBroker.Service;
+using Newtonsoft.Json.Linq;
 
 public class DataverseService : IDataverseService
 {
+    // public ServerConfig config = new ServerConfig("https//demo.dataverse.org"); // todo change this
+    // private ServerConfig config = new ServerConfig("");
+
     public async Task<DataverseLatestVersionModel> GetLatestVersion(string url)
     {
         string serverUrl = GetServerUrl(url);
@@ -47,26 +48,6 @@ public class DataverseService : IDataverseService
         return latestModel;
     }
 
-    public async Task<string> GetItemFromXml(string url)
-    {
-        var response = await ServerConfig.Client.GetAsync(url);
-        Stream data = await response.Content.ReadAsStreamAsync();
-        
-        XDocument xDocument = XDocument.Load(data);
-
-        IEnumerable<XElement> xElements = xDocument.Root.Elements().Where(x => x.Name.LocalName == "object");
-
-        string name;
-        foreach (var element in xElements)
-        {
-            name = element.Elements().FirstOrDefault(x => x.Name.LocalName == "name").ToString();
-            name = name.Replace("<name>", "").Replace("</name>", "");
-            return name;
-        }
-
-        return null;
-    }
-
     private string GetServerUrl(string url)
     {
         Uri uri = new Uri(url);
@@ -105,15 +86,98 @@ public class DataverseService : IDataverseService
         }
 
         var responseJson = await response.Content.ReadAsStringAsync();
-        var deserialisedResponse = JsonConvert.DeserializeObject<DataverseResponseModel>(responseJson);
+        var deserializedResponse = JsonConvert.DeserializeObject<DataverseResponseModel>(responseJson);
         
-        if (deserialisedResponse == null)
+        if (deserializedResponse == null)
         {
             // TODO: throw error
             Console.WriteLine("no deserialised response");
             return null;
         }
 
-        return deserialisedResponse;
+        return deserializedResponse;
     }
+    
+    // public async Task<string> GetDataverseResponse(GetDatasetRequestDTO request)
+    // {
+    //     string persistendId = await GetPersistentId(request.DatasetUrl);
+    //     string version = await GetVersion(request.DatasetUrl);
+
+    //     string response = await GetDataset(persistendId);
+
+    //     if (string.IsNullOrEmpty(response))
+    //     {
+    //         return "Error getting response";
+    //     }
+
+    //     return response;
+    // }
+
+    // private async Task<string> GetDataset(string persistentId)
+    // {
+    //     string url = $"datasets/:persistentId/?persistentId={persistentId}";
+    //     var response = await ServerConfig.Client.GetAsync(url);
+
+    //     if (!response.IsSuccessStatusCode)
+    //     {
+    //         // Console.WriteLine(response);
+    //         // string content = await response.Content.ReadAsStringAsync();
+    //         // Console.WriteLine(content);
+    //         // return true;
+    //         return null;
+    //     }
+
+    //     return await response.Content.ReadAsStringAsync();
+    // }
+
+    // public async Task<DataverseLatestVersionModel> GetLatestVersion(GetDatasetRequestDTO request)
+    // {
+    //     string persistendId = await GetPersistentId(request.DatasetUrl);
+
+    //     DataverseResponseModel response = await GetDataverseResponse(persistendId);
+
+    //     if (response.Data == null)
+    //     {
+    //         Console.WriteLine("response is null :(");
+    //     }
+
+    //     Console.WriteLine(response.Data);
+
+    //     DataverseLatestVersionModel latestVersion = response.Data.LatestVersion;
+
+    //     if (latestVersion == null)
+    //     {
+    //         Console.WriteLine("latest version is null :(");
+    //         return null;
+    //     }
+
+    //     return latestVersion;
+    // }
+
+    // private async Task<DataverseResponseModel> GetDataverseResponse(string persistentId)
+    // {
+    //     string url = $"datasets/:persistentId/?persistentId={persistentId}";
+    //     var response = await ServerConfig.Client.GetAsync(url);
+
+    //     if (!response.IsSuccessStatusCode)
+    //     {
+    //         // TODO: throw error
+    //         return null;
+    //     }
+
+    //     var json = await response.Content.ReadAsStringAsync();
+
+    //     // fix this !!
+        // var deserializedResponse = JsonConvert.DeserializeObject<DataverseResponseModel>(json);
+        // if (deserializedResponse == null)
+        // {
+        //     // TODO: throw error
+        //     return null;
+        // }
+
+    //     Console.WriteLine(deserializedResponse.Status);
+    //     Console.WriteLine(deserializedResponse.Data);
+
+    //     return deserializedResponse;
+    // }
 }

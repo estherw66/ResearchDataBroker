@@ -44,6 +44,9 @@ const IndexDataset = () => {
             'DatasetUrl': datasetUrl
         }
         
+        console.log(requestData)
+        console.log(datasetUrl)
+        
         axios.post('api/index', requestData)
             .then(res =>{
                 setItems(res.data.itemDTOs)
