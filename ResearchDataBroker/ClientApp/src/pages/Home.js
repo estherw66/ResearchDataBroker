@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import IndexDataset from "../components/IndexDataset";
+import SearchItem from "../components/SearchItem";
 
 
 export class Home extends Component {
@@ -8,10 +9,9 @@ export class Home extends Component {
   render() {
     return (
       <div>
-            <h1>Hello, world!</h1>
-        <p>Welkom bij de indexeer app :)</p>
-          <p>Voer een url van een Dataverse dataset in om deze te indexeren:</p>
-          <IndexDataset />
+            <h3>Zoek data bestanden:</h3>
+          <SearchItem />
+          {/*<IndexDataset />*/}
       </div>
     );
   }

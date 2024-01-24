@@ -9,7 +9,10 @@ const context =  [
   "/api/index",
   "/api/index/files",
   "/api/index/items",
+    "/api/index/files/"
 ];
+
+// context.push("/api/index/files/:item")
 
 module.exports = function(app) {
   const appProxy = createProxyMiddleware(context, {
