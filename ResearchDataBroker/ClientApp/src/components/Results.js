@@ -23,6 +23,10 @@ const Results = ({item}) => {
     useEffect(() => {
         getFiles()
     }, []);
+
+    useEffect(() => {
+        getFiles()
+    }, [item]);
     
     return (
         <main>

@@ -1,18 +1,22 @@
-import React from "react";
+import React, {useEffect, useState} from "react";
 import Results from "../components/Results";
 import {Link, useParams} from "react-router-dom";
 import {Home} from "./Home";
+import SearchComponent from "../components/SearchComponent";
 
 const SearchResults = () => {
-    // let {item} = useParams()
     let {item} = useParams()
+    const [currentItem, setCurrentItem] = useState(item);
+
+    useEffect(() => {
+        setCurrentItem(item)
+    }, [item]);
     
     return (
-        <main>
-            <h3>Results for {item}:</h3>
-            <h3 className={'button'}><Link to={'/'}>Search</Link></h3>
-            <Results item={item}/>
-        </main>
+        <>
+            <SearchComponent />
+            <Results item={currentItem}/>
+        </>
     )
 }
 

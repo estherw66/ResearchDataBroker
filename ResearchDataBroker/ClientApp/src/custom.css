@@ -13,3 +13,40 @@ code {
   border-color: #1861ac;
 }
 
+.search-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.title {
+  color: #000;
+  font-size: 30px;
+  font-weight: normal;
+}
+
+.search-box .search-bar {
+  height: 35px;
+  width: 400px;
+  margin: 8px 0 0 auto;
+  padding: 0 15px;
+  /*background-color: #1b6ec2;*/
+  border: 1px solid lightgray;
+  font-size: 15px;
+  border-radius: 50px;
+}
+
+.search-btn{
+  cursor: pointer;
+  height: 35px;
+  width: 125px;
+  margin: 8px 0 0 10px;
+  background-color: #5f3763;
+  border-radius: 50px;
+  color: #fff;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  transition: .3s;
+  border: 1px solid black;
+}
